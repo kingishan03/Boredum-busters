@@ -1,0 +1,179 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#111327" />
+    <title>Handy Dandy Calculator</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: #eef6f5;
+        color: #173b39;
+        font-family: Arial, sans-serif;
+      }
+
+      main {
+        width: min(100%, 440px);
+        padding: 28px;
+        border-radius: 16px;
+        background: #6f9895;
+        box-shadow: 0 12px 30px rgb(23 59 57 / 15%);
+      }
+
+      h1 {
+        margin-top: 0;
+      }
+
+      .inputs {
+        display: grid;
+        gap: 14px;
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        font-weight: 700;
+      }
+
+      input,
+      select,
+      button {
+        min-height: 44px;
+        padding: 10px 12px;
+        border: 1px solid #527674;
+        border-radius: 8px;
+        font: inherit;
+      }
+
+      button {
+        margin-top: 18px;
+        background: #145c58;
+        color: white;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #104a47;
+      }
+
+      #result {
+        min-height: 1.5em;
+        margin-bottom: 0;
+        font-size: 1.15rem;
+        font-weight: 700;
+      }
+
+      body {
+        background:
+          radial-gradient(ellipse at 18% 0%, rgb(167 139 250 / 18%), transparent 34rem),
+          #111327;
+        color: #f7f6ff;
+      }
+
+      main {
+        border: 1px solid rgb(255 255 255 / 12%);
+        border-radius: 20px;
+        background: #1b1d35;
+        box-shadow: 0 20px 55px rgb(0 0 0 / 28%);
+      }
+
+      main > p { color: #c2bfd5; }
+      label { color: #e8e4f5; }
+      input, select {
+        border-color: #494660;
+        background: #111327;
+        color: #f7f6ff;
+      }
+      button {
+        border: 0;
+        border-radius: 10px;
+        background: linear-gradient(110deg, #bba8ff, #ff9acb);
+        color: #18152a;
+      }
+      button:hover { background: #e0d4ff; }
+      a { color: #cbbaff; }
+      button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+        outline: 3px solid #fff;
+        outline-offset: 3px;
+      }
+      main > a { color: #cbbaff; font-weight: 700; text-decoration: none; }
+      main > a:hover { color: white; }
+      .site-logo { position: fixed; top: 12px; left: 12px; z-index: 1000; display: block; width: 52px; height: 52px; }
+      .site-logo img { display: block; width: 100%; height: 100%; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 16px rgb(0 0 0 / 28%); }
+      body { padding-top: 82px; }
+    </style>
+  </head>
+  <body>
+    <a class="site-logo" href="../home.html" aria-label="Boredom-Busters home"><img src="../Website logo.png" alt="" /></a>
+    <main>
+      <a href="../home.html">← All apps</a>
+      <h1>Handy Dandy Calculator</h1>
+      <p>Enter two numbers and choose an operation.</p>
+      <form id="calculator">
+        <div class="inputs">
+          <label for="first-number">
+            First number
+            <input id="first-number" type="number" step="any" required />
+          </label>
+          <label for="operation">
+            Operation
+            <select id="operation">
+              <option value="add">Addition (+)</option>
+              <option value="subtract">Subtraction (-)</option>
+              <option value="multiply">Multiplication (×)</option>
+              <option value="divide">Division (÷)</option>
+            </select>
+          </label>
+          <label for="second-number">
+            Second number
+            <input id="second-number" type="number" step="any" required />
+          </label>
+        </div>
+        <button type="submit">Calculate</button>
+      </form>
+      <p id="result" role="status" aria-live="polite"></p>
+    </main>
+    <script>
+      const form = document.querySelector("#calculator");
+      const result = document.querySelector("#result");
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        const first = Number(document.querySelector("#first-number").value);
+        const second = Number(document.querySelector("#second-number").value);
+        const operation = document.querySelector("#operation").value;
+
+        if (!Number.isFinite(first) || !Number.isFinite(second)) {
+          result.textContent = "Please enter valid numbers.";
+          return;
+        }
+
+        if (operation === "divide" && second === 0) {
+          result.textContent = "You cannot divide by zero.";
+          return;
+        }
+
+        const answers = {
+          add: first + second,
+          subtract: first - second,
+          multiply: first * second,
+          divide: first / second,
+        };
+
+        result.textContent = `Result: ${answers[operation]}`;
+      });
+    </script>
+  </body>
+</html>

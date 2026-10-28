@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#19152e" />
+    <title>Tiny Quest #2 — Boredom-Busters</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { display: grid; min-height: 100vh; place-items: center; margin: 0; padding: 22px 14px; background: radial-gradient(ellipse at 20% 5%, #453565, transparent 48%), #19152e; color: #fbf8ff; font-family: Arial, sans-serif; }
+      main { width: min(100%, 620px); }
+      .topbar { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 16px; }
+      .topbar a { color: #cbbaff; font-weight: 700; }
+      h1 { margin: 0; font-size: clamp(1.7rem, 7vw, 2.7rem); letter-spacing: -0.04em; }
+      .panel { padding: clamp(20px, 6vw, 34px); border: 1px solid rgb(255 255 255 / 13%); border-radius: 22px; background: #25203b; box-shadow: 0 18px 48px rgb(0 0 0 / 28%); text-align: center; }
+      .icon { display: grid; width: 64px; height: 64px; place-items: center; margin: 0 auto 15px; border-radius: 20px; background: rgb(203 186 255 / 12%); font-size: 2rem; }
+      .description { color: #c4bfd4; line-height: 1.55; }
+      #prompt { margin: 26px 0; color: #fff; font-size: clamp(1.3rem, 5vw, 1.9rem); font-weight: 800; line-height: 1.45; }
+      #extra { min-height: 1.4em; color: #cbbaff; }
+      .actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
+      button { min-height: 46px; padding: 10px 16px; border: 0; border-radius: 11px; background: linear-gradient(110deg, #c2adff, #ffa0ce); color: #201830; font: inherit; font-weight: 800; cursor: pointer; }
+      button:hover { filter: brightness(1.08); transform: translateY(-1px); }
+      button:focus-visible, a:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+      #score { margin: 18px 0 0; color: #a9efd8; font-weight: 700; }
+      .site-logo { position: fixed; top: 12px; left: 12px; z-index: 1000; display: block; width: 52px; height: 52px; }
+      .site-logo img { display: block; width: 100%; height: 100%; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 16px rgb(0 0 0 / 28%); }
+      .topbar { padding-left: 60px; }
+      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0.01ms !important; scroll-behavior: auto !important; } }
+    </style>
+  </head>
+  <body>
+    <a class="site-logo" href="../../../home.html" aria-label="Boredom-Busters home"><img src="../../../Website logo.png" alt="" /></a>
+    <main>
+      <header class="topbar"><h1>Tiny Quest #2</h1><a href="../../home.html">All apps</a></header>
+      <section class="panel" aria-label="Tiny Quest #2">
+        <div class="icon" aria-hidden="true">🗺️</div>
+        <p class="description">Pick a tiny real-world quest and collect a point when you finish.</p>
+        <p id="prompt"></p>
+        <div id="actions" class="actions"></div>
+        <p id="extra" aria-live="polite"></p>
+        <p id="score" role="status" aria-live="polite"></p>
+      </section>
+    </main>
+    <script>
+      const app = {"slug": "tiny-quest", "title": "Tiny Quest #2", "kind": "game", "icon": "\ud83d\uddfa\ufe0f", "tag": "MINI CHALLENGE", "description": "Pick a tiny real-world quest and collect a point when you finish.", "mode": "quest", "items": [{"prompt": "Find something nearby that is your favorite color."}, {"prompt": "Stretch your arms up high and take one slow breath."}, {"prompt": "Think of one small thing you are grateful for."}, {"prompt": "Draw a tiny star without lifting your pen."}, {"prompt": "Tidy one small spot for just one minute."}, {"prompt": "Name three things you can hear right now."}]};
+      const prompt = document.querySelector("#prompt");
+      const actions = document.querySelector("#actions");
+      const extra = document.querySelector("#extra");
+      const scoreDisplay = document.querySelector("#score");
+      let index = 0;
+      let points = 0;
+      let revealed = false;
+      function current() { return app.items[index]; }
+      function button(label, onClick) {
+        const element = document.createElement("button");
+        element.type = "button";
+        element.textContent = label;
+        element.addEventListener("click", onClick);
+        actions.append(element);
+      }
+      function next() {
+        index = (index + 1) % app.items.length;
+        revealed = false;
+        render();
+      }
+      function render() {
+        const item = current();
+        prompt.textContent = item.prompt;
+        actions.replaceChildren();
+        extra.textContent = "";
+        scoreDisplay.textContent = app.mode === "quest" ? `Quests completed: ${points}` : "";
+        if (app.mode === "riddle" || app.mode === "reveal") {
+          button(revealed ? "Next one" : app.mode === "riddle" ? "Show hint" : "Reveal answer", () => {
+            if (revealed) return next();
+            revealed = true;
+            extra.textContent = app.mode === "riddle" ? item.hint : item.answer;
+            if (app.mode === "riddle") {
+              actions.replaceChildren();
+              button("Reveal answer", () => { extra.textContent = item.answer; actions.replaceChildren(); button("Next riddle", next); });
+              button("Skip to next", next);
+            } else {
+              actions.replaceChildren();
+              button("Tell me another", next);
+            }
+          });
+        } else if (app.mode === "quiz") {
+          item.choices.forEach((choice) => button(choice, () => {
+            actions.replaceChildren();
+            if (choice === item.answer) {
+              points += 1;
+              extra.textContent = "Correct! Nice one.";
+            } else {
+              extra.textContent = `Not quite — the answer is ${item.answer}.`;
+            }
+            scoreDisplay.textContent = `Correct answers: ${points}`;
+            button("Next question", next);
+          }));
+        } else if (app.mode === "choice") {
+          item.choices.forEach((choice) => button(choice, () => {
+            extra.textContent = `Great choice: ${choice}`;
+            actions.replaceChildren();
+            button("Next dilemma", next);
+          }));
+        } else if (app.mode === "quest") {
+          button("I did it! +1", () => {
+            points += 1;
+            next();
+          });
+          button("Give me another", next);
+        } else {
+          button(app.button || "Surprise me", next);
+        }
+      }
+      render();
+    </script>
+  </body>
+</html>

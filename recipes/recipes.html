@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#111327" />
+    <title>Recipe Finder</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        padding: 28px 16px;
+        background: #7b76b0;
+        color: #24233a;
+        font-family: Arial, sans-serif;
+      }
+
+      main {
+        width: min(100%, 980px);
+        margin: 0 auto;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 22px;
+      }
+
+      .topbar a {
+        color: #24233a;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(1.75rem, 6vw, 3rem);
+      }
+
+      .search-panel {
+        margin-bottom: 24px;
+        padding: clamp(18px, 4vw, 26px);
+        border: 1px solid rgb(255 255 255 / 45%);
+        border-radius: 16px;
+        background: #6f9895;
+        box-shadow: 0 12px 30px rgb(39 35 74 / 15%);
+      }
+
+      .search-panel p {
+        margin: 0 0 16px;
+        color: #214a47;
+      }
+
+      form {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        gap: 10px;
+      }
+
+      input,
+      select,
+      button {
+        min-height: 46px;
+        padding: 10px 14px;
+        border: 1px solid #527674;
+        border-radius: 8px;
+        font: inherit;
+      }
+
+      input,
+      select {
+        min-width: 0;
+        background: white;
+        color: #173b39;
+      }
+
+      button {
+        background: #145c58;
+        color: white;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button:hover:not(:disabled) {
+        background: #104a47;
+      }
+
+      button:disabled {
+        cursor: wait;
+        opacity: 0.6;
+      }
+
+      #status {
+        min-height: 1.4em;
+        margin: 14px 0 0;
+        color: #173b39;
+      }
+
+      .results-heading {
+        margin: 28px 0 14px;
+        font-size: 1.4rem;
+      }
+
+      #results {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+        gap: 16px;
+      }
+
+      .recipe-card {
+        overflow: hidden;
+        border: 1px solid rgb(255 255 255 / 45%);
+        border-radius: 14px;
+        background: #f7f7f2;
+        box-shadow: 0 10px 24px rgb(39 35 74 / 12%);
+      }
+
+      .recipe-card img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+        background: #e5e2ef;
+      }
+
+      .recipe-card-body {
+        padding: 16px;
+      }
+
+      .recipe-card h3 {
+        margin: 0 0 8px;
+        font-size: 1.15rem;
+      }
+
+      .recipe-card p {
+        margin: 0 0 14px;
+        color: #5e5d72;
+        font-size: 0.92rem;
+      }
+
+      .recipe-card button {
+        width: 100%;
+      }
+
+      dialog {
+        width: min(92vw, 720px);
+        max-height: 88vh;
+        padding: 0;
+        overflow: auto;
+        border: 0;
+        border-radius: 16px;
+        color: #24233a;
+        box-shadow: 0 20px 60px rgb(0 0 0 / 30%);
+      }
+
+      dialog::backdrop {
+        background: rgb(20 18 42 / 68%);
+      }
+
+      .dialog-content {
+        padding: clamp(18px, 4vw, 30px);
+      }
+
+      .dialog-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+      }
+
+      .dialog-header h2 {
+        margin: 0 0 14px;
+      }
+
+      #close-dialog {
+        min-width: 44px;
+        min-height: 44px;
+        padding: 6px;
+      }
+
+      #detail-image {
+        display: block;
+        width: 100%;
+        max-height: 360px;
+        border-radius: 12px;
+        object-fit: cover;
+      }
+
+      #ingredients {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 6px 18px;
+        padding-left: 22px;
+      }
+
+      #instructions {
+        white-space: pre-line;
+        line-height: 1.65;
+      }
+
+      #source-link {
+        display: inline-block;
+        margin-top: 8px;
+        color: #145c58;
+        font-weight: 700;
+      }
+
+      .attribution {
+        margin: 24px 0 0;
+        color: #24233a;
+        font-size: 0.88rem;
+        text-align: center;
+      }
+
+      .attribution a {
+        color: inherit;
+      }
+
+      body {
+        background:
+          radial-gradient(ellipse at 12% 0%, rgb(167 139 250 / 18%), transparent 34rem),
+          #111327;
+        color: #f7f6ff;
+      }
+      .topbar a, .attribution a, #source-link { color: #cbbaff; }
+      .search-panel, .recipe-card {
+        border-color: rgb(255 255 255 / 12%);
+        background: #1b1d35;
+        box-shadow: 0 16px 38px rgb(0 0 0 / 20%);
+      }
+      .search-panel p, .recipe-card p, .attribution { color: #c2bfd5; }
+      input, select {
+        border-color: #494660;
+        background: #111327;
+        color: #f7f6ff;
+      }
+      button {
+        border: 0;
+        background: linear-gradient(110deg, #bba8ff, #ff9acb);
+        color: #18152a;
+      }
+      button:hover:not(:disabled) { background: #e0d4ff; }
+      .recipe-card img { background: #282641; }
+      .recipe-card h3 { color: #f7f6ff; }
+      dialog {
+        border: 1px solid rgb(255 255 255 / 13%);
+        background: #1b1d35;
+        color: #f7f6ff;
+      }
+      dialog::backdrop { background: rgb(7 8 20 / 78%); }
+      button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+        outline: 3px solid white;
+        outline-offset: 3px;
+      }
+
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      a:focus-visible {
+        outline: 3px solid #f4ce67;
+        outline-offset: 2px;
+      }
+
+      @media (max-width: 650px) {
+        form {
+          grid-template-columns: 1fr;
+        }
+      }
+      .site-logo { position: fixed; top: 12px; left: 12px; z-index: 1000; display: block; width: 52px; height: 52px; }
+      .site-logo img { display: block; width: 100%; height: 100%; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 16px rgb(0 0 0 / 28%); }
+      .topbar { padding-left: 60px; }
+    </style>
+  </head>
+  <body>
+    <a class="site-logo" href="../home.html" aria-label="Boredom-Busters home"><img src="../Website logo.png" alt="" /></a>
+    <main>
+      <header class="topbar">
+        <h1>Recipe Finder</h1>
+        <a href="../home.html">Back to home</a>
+      </header>
+
+      <section class="search-panel" aria-label="Find recipes">
+        <p id="search-help">Search by a dish name, or switch to ingredients and enter up to five separated by commas.</p>
+        <form id="search-form">
+          <label for="search-input" hidden>Recipe name or ingredients</label>
+          <input
+            id="search-input"
+            type="search"
+            placeholder="Try: pasta or chicken, tomato, garlic"
+            required
+          />
+          <label for="search-mode" hidden>Search type</label>
+          <select id="search-mode">
+            <option value="name">Recipe name</option>
+            <option value="ingredients">Ingredients</option>
+          </select>
+          <button id="search-button" type="submit">Find recipes</button>
+        </form>
+        <p id="status" role="status" aria-live="polite">Choose a search type and find something delicious.</p>
+      </section>
+
+      <h2 class="results-heading" id="results-heading" hidden>Recipes</h2>
+      <section id="results" aria-label="Recipe results"></section>
+
+      <dialog id="recipe-dialog" aria-labelledby="detail-title">
+        <div class="dialog-content">
+          <div class="dialog-header">
+            <h2 id="detail-title"></h2>
+            <button id="close-dialog" type="button" aria-label="Close recipe details">Close</button>
+          </div>
+          <img id="detail-image" alt="" />
+          <h3>Ingredients</h3>
+          <ul id="ingredients"></ul>
+          <h3>Instructions</h3>
+          <p id="instructions"></p>
+          <a id="source-link" target="_blank" rel="noopener noreferrer" hidden>View original recipe</a>
+        </div>
+      </dialog>
+
+      <p class="attribution">
+        Recipe data provided by
+        <a href="https://www.themealdb.com/" target="_blank" rel="noopener noreferrer">TheMealDB</a>.
+      </p>
+    </main>
+
+    <script>
+      const apiRoot = "https://www.themealdb.com/api/json/v1/1";
+      const searchForm = document.querySelector("#search-form");
+      const searchInput = document.querySelector("#search-input");
+      const searchMode = document.querySelector("#search-mode");
+      const searchButton = document.querySelector("#search-button");
+      const status = document.querySelector("#status");
+      const results = document.querySelector("#results");
+      const resultsHeading = document.querySelector("#results-heading");
+      const recipeDialog = document.querySelector("#recipe-dialog");
+      const closeDialogButton = document.querySelector("#close-dialog");
+      let activeSearch = 0;
+
+      function updateSearchHint() {
+        const ingredientMode = searchMode.value === "ingredients";
+        searchInput.placeholder = ingredientMode
+          ? "Try: chicken, garlic, tomato"
+          : "Try a dish name, like Arrabiata";
+        document.querySelector("#search-help").textContent = ingredientMode
+          ? "Enter up to five ingredients, separated by commas. Results are ranked by how many match."
+          : "Search for a dish by name, such as pasta, curry, or Arrabiata.";
+      }
+
+      function showRecipes(meals) {
+        results.replaceChildren();
+        resultsHeading.hidden = meals.length === 0;
+
+        for (const meal of meals) {
+          const card = document.createElement("article");
+          card.className = "recipe-card";
+
+          const image = document.createElement("img");
+          image.src = meal.strMealThumb;
+          image.alt = "";
+          image.loading = "lazy";
+
+          const body = document.createElement("div");
+          body.className = "recipe-card-body";
+
+          const title = document.createElement("h3");
+          title.textContent = meal.strMeal;
+
+          const category = document.createElement("p");
+          const recipeTags = [meal.strCategory, meal.strArea]
+            .filter(Boolean)
+            .join(" · ") || "Recipe";
+          const ingredientMatch = meal.matchedIngredients?.length
+            ? `Matches ${meal.matchedIngredients.length} of your ingredient${meal.matchedIngredients.length === 1 ? "" : "s"}`
+            : "";
+          category.textContent = [recipeTags, ingredientMatch].filter(Boolean).join(" · ");
+
+          const detailsButton = document.createElement("button");
+          detailsButton.type = "button";
+          detailsButton.textContent = "View recipe";
+          detailsButton.addEventListener("click", () => loadRecipeDetails(meal.idMeal));
+
+          body.append(title, category, detailsButton);
+          card.append(image, body);
+          results.append(card);
+        }
+      }
+
+      async function loadRecipeDetails(id) {
+        status.textContent = "Loading recipe...";
+        try {
+          const response = await fetch(`${apiRoot}/lookup.php?i=${encodeURIComponent(id)}`);
+          if (!response.ok) {
+            throw new Error("Recipe details could not be loaded. Please try again.");
+          }
+
+          const data = await response.json();
+          const meal = data.meals?.[0];
+          if (!meal) {
+            throw new Error("This recipe is no longer available.");
+          }
+
+          document.querySelector("#detail-title").textContent = meal.strMeal;
+          const detailImage = document.querySelector("#detail-image");
+          detailImage.src = meal.strMealThumb;
+          detailImage.alt = `${meal.strMeal} recipe`;
+
+          const ingredients = document.querySelector("#ingredients");
+          ingredients.replaceChildren();
+          for (let index = 1; index <= 20; index += 1) {
+            const ingredient = meal[`strIngredient${index}`]?.trim();
+            if (!ingredient) continue;
+            const measure = meal[`strMeasure${index}`]?.trim();
+            const item = document.createElement("li");
+            item.textContent = [measure, ingredient].filter(Boolean).join(" ");
+            ingredients.append(item);
+          }
+
+          document.querySelector("#instructions").textContent =
+            meal.strInstructions || "No instructions are available for this recipe.";
+          const sourceLink = document.querySelector("#source-link");
+          if (meal.strSource) {
+            sourceLink.href = meal.strSource;
+            sourceLink.hidden = false;
+          } else {
+            sourceLink.hidden = true;
+            sourceLink.removeAttribute("href");
+          }
+
+          status.textContent = `Showing ${meal.strMeal}.`;
+          recipeDialog.showModal();
+        } catch (error) {
+          status.textContent = error instanceof Error
+            ? error.message
+            : "Could not load recipe details.";
+        }
+      }
+
+      async function findByIngredients(ingredients) {
+        if (ingredients.length > 5) {
+          throw new Error("Search for up to five ingredients at a time.");
+        }
+
+        const ingredientResults = await Promise.all(
+          ingredients.map(async (ingredient) => {
+            const response = await fetch(
+              `${apiRoot}/filter.php?i=${encodeURIComponent(ingredient)}`
+            );
+            if (!response.ok) {
+              throw new Error("Ingredient search is unavailable. Please try again.");
+            }
+            const data = await response.json();
+            return data.meals || [];
+          })
+        );
+
+        const mealsById = new Map();
+        ingredientResults.forEach((meals, ingredientIndex) => {
+          for (const meal of meals) {
+            const existing = mealsById.get(meal.idMeal);
+            if (existing) {
+              existing.matchedIngredients.push(ingredients[ingredientIndex]);
+            } else {
+              mealsById.set(meal.idMeal, {
+                ...meal,
+                matchedIngredients: [ingredients[ingredientIndex]],
+              });
+            }
+          }
+        });
+
+        return [...mealsById.values()]
+          .sort((first, second) =>
+            second.matchedIngredients.length - first.matchedIngredients.length ||
+            first.strMeal.localeCompare(second.strMeal)
+          )
+          .slice(0, 24);
+      }
+
+      searchForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const query = searchInput.value.trim();
+        if (!query) {
+          status.textContent = "Enter a recipe name or at least one ingredient.";
+          return;
+        }
+
+        const searchId = ++activeSearch;
+        searchButton.disabled = true;
+        status.textContent = "Searching recipes...";
+        results.replaceChildren();
+        resultsHeading.hidden = true;
+
+        try {
+          let meals;
+          if (searchMode.value === "ingredients") {
+            const ingredients = [...new Set(
+              query.split(",").map((ingredient) => ingredient.trim().toLowerCase()).filter(Boolean)
+            )];
+            if (ingredients.length === 0) {
+              throw new Error("Enter at least one ingredient.");
+            }
+            meals = await findByIngredients(ingredients);
+          } else {
+            const response = await fetch(
+              `${apiRoot}/search.php?s=${encodeURIComponent(query)}`
+            );
+            if (!response.ok) {
+              throw new Error("Recipe search is unavailable. Please try again.");
+            }
+            const data = await response.json();
+            meals = data.meals || [];
+          }
+
+          if (searchId !== activeSearch) return;
+          showRecipes(meals);
+          if (meals.length === 0) {
+            status.textContent = searchMode.value === "ingredients"
+              ? `No recipes in the catalog matched ${query}. Try common ingredient names separated by commas, like chicken, rice.`
+              : `No recipes matched "${query}". Try a shorter dish name, or switch to Ingredients and enter comma-separated items you have.`;
+          } else if (searchMode.value === "ingredients") {
+            status.textContent =
+              `Found ${meals.length} recipe${meals.length === 1 ? "" : "s"}, ranked by how many of your ingredients they use.`;
+          } else {
+            status.textContent = `Found ${meals.length} recipe${meals.length === 1 ? "" : "s"}.`;
+          }
+        } catch (error) {
+          if (searchId === activeSearch) {
+            status.textContent = error instanceof Error
+              ? error.message
+              : "Recipe search failed. Check your connection and try again.";
+          }
+        } finally {
+          if (searchId === activeSearch) {
+            searchButton.disabled = false;
+          }
+        }
+      });
+
+      closeDialogButton.addEventListener("click", () => recipeDialog.close());
+      recipeDialog.addEventListener("click", (event) => {
+        if (event.target === recipeDialog) recipeDialog.close();
+      });
+
+      searchMode.addEventListener("change", updateSearchHint);
+      updateSearchHint();
+    </script>
+  </body>
+</html>

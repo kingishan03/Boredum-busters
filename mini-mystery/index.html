@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#171d2d" />
+    <title>Mini Mystery — Boredom-Busters</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { min-height: 100vh; margin: 0; padding: 28px 16px; background: radial-gradient(ellipse at 5% 0%, #3b3155, transparent 44%), #171d2d; color: #f6f5ff; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+      main { width: min(100%, 740px); margin: 0 auto; }
+      nav { margin-bottom: 24px; } a { color: #d2c4ff; font-weight: 750; }
+      .top { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; }
+      h1 { margin: 4px 0; font-size: clamp(2.4rem, 8vw, 4rem); letter-spacing: -.06em; }
+      .eyebrow { margin: 0; color: #b7a5ff; font-size: .78rem; font-weight: 850; letter-spacing: .15em; text-transform: uppercase; }
+      #progress { flex: 0 0 auto; padding-bottom: 10px; color: #b9b8cb; font-weight: 750; }
+      .case { margin-top: 22px; padding: clamp(22px, 5vw, 38px); border: 1px solid #ffffff20; border-radius: 24px; background: #22283b; box-shadow: 0 22px 65px #0004; }
+      .story { margin: 0; color: #dad8e8; font-size: 1.03rem; line-height: 1.75; }
+      h2 { margin: 25px 0 16px; font-size: clamp(1.3rem, 4vw, 1.7rem); line-height: 1.35; }
+      #answers { display: grid; gap: 10px; }
+      button { min-height: 50px; padding: 12px 15px; border: 1px solid #ffffff21; border-radius: 12px; background: #2b3148; color: #f6f5ff; font: inherit; font-weight: 700; text-align: left; cursor: pointer; }
+      button:hover:not(:disabled) { border-color: #b7a5ff; background: #353653; }
+      button:disabled { cursor: default; opacity: .8; }
+      button:focus-visible, a:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+      #feedback { min-height: 1.6em; margin: 17px 0; color: #a9efd8; font-weight: 750; }
+      #next, #restart { border: 0; background: #c6b7ff; color: #211b36; text-align: center; }
+      #next[hidden], #restart[hidden] { display: none; }
+      @media (max-width: 520px) { body { padding: 20px 12px; } .top { align-items: flex-start; flex-direction: column; gap: 2px; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <nav><a href="../home.html">← All mini apps</a></nav>
+      <header class="top"><div><p class="eyebrow">Five clues. One sharp detective.</p><h1>Mini Mystery <span aria-hidden="true">🕵️</span></h1></div><p id="progress" aria-live="polite"></p></header>
+      <section class="case" aria-label="Mystery quiz">
+        <p id="story" class="story"></p>
+        <h2 id="question"></h2>
+        <div id="answers"></div>
+        <p id="feedback" role="status" aria-live="polite"></p>
+        <button id="next" type="button" hidden>Next clue →</button>
+        <button id="restart" type="button" hidden>Solve another case</button>
+      </section>
+    </main>
+    <script>
+      const cases = [
+        { story: "A baker says the shop window was spotless when she left. After the storm, the glass is cracked and a muddy ball is inside. The neighbors say they were all indoors.", question: "Who most likely broke the window?", choices: ["The person who kicked a ball nearby", "The baker", "The rain"], answer: "The person who kicked a ball nearby" },
+        { story: "Three friends each brought one snack: an apple, a sandwich, and a cookie. Alex brought the apple. Bailey did not bring the sandwich.", question: "What did Bailey bring?", choices: ["The apple", "The sandwich", "The cookie"], answer: "The cookie" },
+        { story: "A note says the missing book is in the red, blue, or green box. Exactly one label is true. Red label: 'The book is here.' Blue label: 'The book is not in this box.' Green label: 'The book is not in the red box.'", question: "Which box holds the book?", choices: ["Red", "Blue", "Green"], answer: "Blue" },
+        { story: "A clock chimes once at 1 o'clock, twice at 2 o'clock, and so on. It takes 5 seconds to chime 4 times.", question: "How long does it take to chime 8 times?", choices: ["About 12 seconds", "About 10 seconds", "About 8 seconds"], answer: "About 12 seconds" },
+        { story: "A room has four corners. A cat sits in each corner. Each cat can see the other three cats.", question: "How many cats are in the room?", choices: ["Four", "Twelve", "Sixteen"], answer: "Four" }
+      ];
+      let index = 0;
+      let score = 0;
+      let answered = false;
+      const story = document.querySelector("#story");
+      const question = document.querySelector("#question");
+      const answers = document.querySelector("#answers");
+      const feedback = document.querySelector("#feedback");
+      const progress = document.querySelector("#progress");
+      const next = document.querySelector("#next");
+      const restart = document.querySelector("#restart");
+      function render() {
+        const current = cases[index];
+        progress.textContent = `Clue ${index + 1} of ${cases.length} · ${score} solved`;
+        story.textContent = current.story;
+        question.textContent = current.question;
+        feedback.textContent = "";
+        next.hidden = true;
+        restart.hidden = true;
+        answers.replaceChildren();
+        current.choices.forEach((choice) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.textContent = choice;
+          button.addEventListener("click", () => choose(button, choice));
+          answers.append(button);
+        });
+      }
+      function choose(selected, choice) {
+        if (answered) return;
+        answered = true;
+        const current = cases[index];
+        answers.querySelectorAll("button").forEach((button) => { button.disabled = true; });
+        if (choice === current.answer) {
+          score += 1;
+          feedback.textContent = "Case cracked! Excellent detective work. ✅";
+        } else {
+          feedback.textContent = `Not quite. The best answer is: ${current.answer}.`;
+        }
+        selected.setAttribute("aria-pressed", "true");
+        progress.textContent = `Clue ${index + 1} of ${cases.length} · ${score} solved`;
+        next.hidden = false;
+      }
+      next.addEventListener("click", () => {
+        if (index < cases.length - 1) {
+          index += 1;
+          answered = false;
+          render();
+        } else {
+          story.textContent = "The case files are closed for now. How did you do?";
+          question.textContent = `You solved ${score} out of ${cases.length} mysteries.`;
+          answers.replaceChildren();
+          feedback.textContent = score === cases.length ? "A flawless investigation! 🏆" : "Every great detective keeps practicing.";
+          progress.textContent = "Case complete";
+          next.hidden = true;
+          restart.hidden = false;
+        }
+      });
+      restart.addEventListener("click", () => { index = 0; score = 0; answered = false; render(); });
+      render();
+    </script>
+  </body>
+</html>

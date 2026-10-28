@@ -1,0 +1,36 @@
+-iqtest>
+-calc>
+-car game>
+-drawing pad>
+-<weather app>
+-<todo list>
+-<recipe finder>
+-<study planner>
+-<chatbot landing page>
+-<event organizer>
+-<online store>
+-<job portal>
+-<restaurant menu>
+-<blog website>
+-<language learning app>
+-<AI tools dashboard>
+-<click frenzy>
+-<memory match>
+-<word scramble>
+-<rock paper scissors>
+-<number guess>
+-<reaction test>
+-<tic-tac-toe>
+-<photo gallery>
+-<habit tracker>
+-<resume builder>
+-<calendar app>
+-
+-<pocket riddles #1>
+-<boredom buddy>
+-<emoji story lab>
+-<color quest>
+-<mini mystery>
+-<one-minute reset>
+-<quick draw>
+-<tiny quest #2>

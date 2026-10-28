@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#202038" />
+    <title>Tic-Tac-Toe</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { min-height: 100vh; margin: 0; padding: 24px 16px; background: #202038; color: #f8f6ff; font-family: Arial, sans-serif; }
+      main { width: min(100%, 620px); margin: 0 auto; }
+      .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; }
+      .topbar a { color: #d3baff; font-weight: 700; }
+      h1 { margin: 0; font-size: clamp(2rem, 7vw, 3rem); }
+      .game { padding: clamp(18px, 5vw, 30px); border: 1px solid rgb(255 255 255 / 12%); border-radius: 20px; background: #2b2b49; box-shadow: 0 18px 45px rgb(0 0 0 / 24%); }
+      .intro { margin: 0 0 18px; color: #cbc9df; line-height: 1.5; }
+      .toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+      label { display: flex; align-items: center; gap: 8px; color: #d8d3ed; font-size: 0.92rem; font-weight: 700; }
+      select, button { min-height: 42px; padding: 8px 12px; border: 1px solid rgb(255 255 255 / 18%); border-radius: 9px; font: inherit; }
+      select { background: #1e1e37; color: white; }
+      button { background: #e5dcff; color: #29223f; font-weight: 800; cursor: pointer; }
+      button:hover:not(:disabled) { background: white; }
+      #board { display: grid; width: min(100%, 390px); grid-template-columns: repeat(3, 1fr); gap: 9px; margin: 0 auto; }
+      .cell { aspect-ratio: 1; border: 1px solid rgb(255 255 255 / 11%); border-radius: 14px; background: #202038; color: #cdb8ff; font-size: clamp(2.6rem, 14vw, 5rem); font-weight: 900; }
+      .cell[data-mark="O"] { color: #71e2c3; }
+      .cell:disabled { cursor: default; opacity: 1; }
+      .cell.winner { border-color: #ffd176; background: #47405a; }
+      #status { min-height: 1.5em; margin: 18px 0 0; color: #e3dcf4; font-size: 1.15rem; font-weight: 800; text-align: center; }
+      #new-game { display: block; min-width: 130px; margin: 14px auto 0; }
+      button:focus-visible, a:focus-visible, select:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+      @media (max-width: 450px) { body { padding: 16px 10px; } .toolbar { align-items: flex-start; flex-direction: column; } }
+      .site-logo { position: fixed; top: 12px; left: 12px; z-index: 1000; display: block; width: 52px; height: 52px; }
+      .site-logo img { display: block; width: 100%; height: 100%; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 16px rgb(0 0 0 / 28%); }
+      .topbar { padding-left: 60px; }
+    </style>
+  </head>
+  <body>
+    <a class="site-logo" href="../home.html" aria-label="Boredom-Busters home"><img src="../Website logo.png" alt="" /></a>
+    <main>
+      <header class="topbar"><h1>Tic-Tac-Toe</h1><a href="../home.html">Home</a></header>
+      <section class="game" aria-label="Tic-Tac-Toe game">
+        <p class="intro">Get three in a row to win. Play with a friend or take on the computer.</p>
+        <div class="toolbar">
+          <label for="mode">Opponent
+            <select id="mode">
+              <option value="computer">Computer</option>
+              <option value="friend">Friend</option>
+            </select>
+          </label>
+          <span id="score">You: 0 · Computer: 0 · Draws: 0</span>
+        </div>
+        <div id="board" role="group" aria-label="Tic-Tac-Toe board"></div>
+        <p id="status" role="status" aria-live="polite"></p>
+        <button id="new-game" type="button">New game</button>
+      </section>
+    </main>
+    <script>
+      const lines = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+      const boardElement = document.querySelector("#board");
+      const status = document.querySelector("#status");
+      const mode = document.querySelector("#mode");
+      const scoreDisplay = document.querySelector("#score");
+      let board = Array(9).fill("");
+      let gameOver = false;
+      let computerTimeout;
+      let scores = { human: 0, computer: 0, draws: 0 };
+      let cells = [];
+
+      function winnerFor(state, mark) {
+        return lines.find((line) => line.every((index) => state[index] === mark)) || null;
+      }
+
+      function updateScore() {
+        scoreDisplay.textContent = mode.value === "friend"
+          ? `X: ${scores.human} · O: ${scores.computer} · Draws: ${scores.draws}`
+          : `You: ${scores.human} · Computer: ${scores.computer} · Draws: ${scores.draws}`;
+      }
+
+      function finish(mark, winningLine) {
+        gameOver = true;
+        cells.forEach((cell, index) => {
+          cell.disabled = true;
+          if (winningLine && winningLine.includes(index)) cell.classList.add("winner");
+        });
+        if (!mark) {
+          scores.draws += 1;
+          status.textContent = "It's a draw! Have another round.";
+        } else if (mode.value === "friend") {
+          scores[mark === "X" ? "human" : "computer"] += 1;
+          status.textContent = `${mark} wins! Nicely played.`;
+        } else if (mark === "X") {
+          scores.human += 1;
+          status.textContent = "You win! Great move.";
+        } else {
+          scores.computer += 1;
+          status.textContent = "Computer wins this round. Try again!";
+        }
+        updateScore();
+      }
+
+      function place(index, mark) {
+        if (gameOver || board[index]) return false;
+        board[index] = mark;
+        const cell = cells[index];
+        cell.textContent = mark;
+        cell.dataset.mark = mark;
+        cell.setAttribute("aria-label", `Square ${index + 1}: ${mark}`);
+        const winningLine = winnerFor(board, mark);
+        if (winningLine) finish(mark, winningLine);
+        else if (board.every(Boolean)) finish(null, null);
+        return true;
+      }
+
+      function computerMove() {
+        if (gameOver) return;
+        const win = lines.map((line) => line.find((index) => !board[index]) !== undefined && line).find((line) => line && line.filter((index) => board[index] === "O").length === 2 && line.filter((index) => !board[index]).length === 1);
+        const block = lines.find((line) => line.filter((index) => board[index] === "X").length === 2 && line.filter((index) => !board[index]).length === 1);
+        const empty = board.map((mark, index) => mark ? -1 : index).filter((index) => index >= 0);
+        const move = win ? win.find((index) => !board[index]) : block ? block.find((index) => !board[index]) : !board[4] ? 4 : empty[Math.floor(Math.random() * empty.length)];
+        place(move, "O");
+        if (!gameOver) status.textContent = "Your turn (X).";
+      }
+
+      function newGame() {
+        window.clearTimeout(computerTimeout);
+        board = Array(9).fill("");
+        gameOver = false;
+        boardElement.replaceChildren();
+        cells = board.map((_, index) => {
+          const cell = document.createElement("button");
+          cell.type = "button";
+          cell.className = "cell";
+          cell.setAttribute("aria-label", `Square ${index + 1}, empty`);
+          cell.addEventListener("click", () => {
+            if (gameOver || board[index]) return;
+            const mark = mode.value === "friend" ? (board.filter(Boolean).length % 2 === 0 ? "X" : "O") : "X";
+            place(index, mark);
+            if (!gameOver && mode.value === "computer") {
+              status.textContent = "Computer is thinking...";
+              cells.forEach((button) => { button.disabled = true; });
+              computerTimeout = window.setTimeout(() => {
+                if (gameOver) return;
+                computerMove();
+                if (!gameOver) cells.forEach((button, cellIndex) => { button.disabled = Boolean(board[cellIndex]); });
+              }, 300);
+            } else if (!gameOver) {
+              status.textContent = `Your turn (${mark === "X" ? "O" : "X"}).`;
+            }
+          });
+          boardElement.append(cell);
+          return cell;
+        });
+        cells.forEach((cell, index) => { cell.disabled = false; cell.setAttribute("aria-label", `Square ${index + 1}, empty`); });
+        status.textContent = mode.value === "computer" ? "Your turn (X)." : "X goes first.";
+      }
+
+      mode.addEventListener("change", () => { scores = { human: 0, computer: 0, draws: 0 }; updateScore(); newGame(); });
+      document.querySelector("#new-game").addEventListener("click", newGame);
+      updateScore();
+      newGame();
+    </script>
+  </body>
+</html>

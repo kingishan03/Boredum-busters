@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#292044" />
+    <title>Memory Match</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { min-height: 100vh; margin: 0; padding: 24px 16px; background: #292044; color: #fff; font-family: Arial, sans-serif; }
+      main { width: min(100%, 700px); margin: 0 auto; }
+      .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; }
+      .topbar a { color: #c9bcff; font-weight: 700; }
+      h1 { margin: 0; font-size: clamp(2rem, 7vw, 3rem); }
+      .game { padding: clamp(18px, 5vw, 28px); border: 1px solid rgb(255 255 255 / 15%); border-radius: 20px; background: #372b58; box-shadow: 0 18px 45px rgb(0 0 0 / 22%); }
+      .intro { margin: 0 0 20px; color: #d7ceef; line-height: 1.5; }
+      .stats { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+      .stats p { margin: 0; color: #e5dcff; font-weight: 700; }
+      button { font: inherit; cursor: pointer; }
+      #restart { min-height: 42px; padding: 8px 14px; border: 0; border-radius: 9px; background: #e4d8ff; color: #292044; font-weight: 700; }
+      #restart:hover { background: white; }
+      .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+      .card { display: grid; aspect-ratio: 1; place-items: center; border: 2px solid rgb(255 255 255 / 12%); border-radius: 14px; background: linear-gradient(145deg, #7664b6, #59458e); color: white; font-size: clamp(1.7rem, 8vw, 3rem); transition: transform 150ms ease, background 150ms ease; }
+      .card:hover:not(:disabled) { transform: translateY(-2px); }
+      .card[aria-pressed="true"], .card:disabled { border-color: #b7f5de; background: #e8fff5; color: #292044; }
+      .card:disabled { cursor: default; }
+      #status { min-height: 1.5em; margin: 16px 0 0; color: #e2d9fa; text-align: center; }
+      button:focus-visible, a:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+      @media (max-width: 430px) { body { padding: 16px 10px; } .grid { gap: 7px; } .card { border-radius: 10px; } }
+      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0.01ms !important; } }
+      .site-logo { position: fixed; top: 12px; left: 12px; z-index: 1000; display: block; width: 52px; height: 52px; }
+      .site-logo img { display: block; width: 100%; height: 100%; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 16px rgb(0 0 0 / 28%); }
+      .topbar { padding-left: 60px; }
+    </style>
+  </head>
+  <body>
+    <a class="site-logo" href="../home.html" aria-label="Boredom-Busters home"><img src="../Website logo.png" alt="" /></a>
+    <main>
+      <header class="topbar"><h1>Memory Match</h1><a href="../home.html">Home</a></header>
+      <section class="game" aria-label="Memory matching game">
+        <p class="intro">Find all eight pairs. Flip two cards at a time and see how many moves you need.</p>
+        <div class="stats">
+          <p>Moves: <span id="moves">0</span></p>
+          <p>Pairs: <span id="pairs">0</span>/8</p>
+          <button id="restart" type="button">New game</button>
+        </div>
+        <div id="grid" class="grid" aria-label="Cards"></div>
+        <p id="status" role="status" aria-live="polite">Choose a card to begin.</p>
+      </section>
+    </main>
+    <script>
+      const symbols = ["🍓", "🚀", "🐸", "🌈", "🍕", "🐙", "🎸", "🌻"];
+      const grid = document.querySelector("#grid");
+      const movesDisplay = document.querySelector("#moves");
+      const pairsDisplay = document.querySelector("#pairs");
+      const status = document.querySelector("#status");
+      let firstCard = null;
+      let locked = false;
+      let moves = 0;
+      let pairs = 0;
+      let round = 0;
+
+      function shuffle(cards) {
+        for (let i = cards.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [cards[i], cards[j]] = [cards[j], cards[i]];
+        }
+        return cards;
+      }
+
+      function chooseCard(button) {
+        if (locked || button.disabled || button === firstCard) return;
+        button.textContent = button.dataset.symbol;
+        button.setAttribute("aria-label", `Revealed ${button.dataset.symbol}`);
+        button.setAttribute("aria-pressed", "true");
+        if (!firstCard) {
+          firstCard = button;
+          status.textContent = "Pick one more card.";
+          return;
+        }
+
+        moves += 1;
+        movesDisplay.textContent = moves;
+        const secondCard = button;
+        if (firstCard.dataset.symbol === secondCard.dataset.symbol) {
+          firstCard.disabled = true;
+          secondCard.disabled = true;
+          firstCard = null;
+          pairs += 1;
+          pairsDisplay.textContent = pairs;
+          if (pairs === symbols.length) {
+            status.textContent = `You found every pair in ${moves} moves. Great memory!`;
+          } else {
+            status.textContent = "It's a match! Find another pair.";
+          }
+          return;
+        }
+
+        locked = true;
+        status.textContent = "Not a match. Take another look!";
+        const thisRound = round;
+        window.setTimeout(() => {
+          if (thisRound !== round) return;
+          firstCard.textContent = "?";
+          secondCard.textContent = "?";
+          firstCard.setAttribute("aria-label", "Hidden card");
+          secondCard.setAttribute("aria-label", "Hidden card");
+          firstCard.setAttribute("aria-pressed", "false");
+          secondCard.setAttribute("aria-pressed", "false");
+          firstCard = null;
+          locked = false;
+          status.textContent = "Choose a card.";
+        }, 850);
+      }
+
+      function newGame() {
+        round += 1;
+        firstCard = null;
+        locked = false;
+        moves = 0;
+        pairs = 0;
+        movesDisplay.textContent = "0";
+        pairsDisplay.textContent = "0";
+        status.textContent = "Choose a card to begin.";
+        grid.replaceChildren();
+        shuffle([...symbols, ...symbols]).forEach((symbol, index) => {
+          const card = document.createElement("button");
+          card.className = "card";
+          card.type = "button";
+          card.textContent = "?";
+          card.dataset.symbol = symbol;
+          card.setAttribute("aria-label", `Card ${index + 1}, hidden`);
+          card.setAttribute("aria-pressed", "false");
+          card.addEventListener("click", () => chooseCard(card));
+          grid.append(card);
+        });
+      }
+
+      document.querySelector("#restart").addEventListener("click", newGame);
+      newGame();
+    </script>
+  </body>
+</html>

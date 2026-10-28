@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#12182d" />
+    <title>Reaction Test</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { min-height: 100vh; margin: 0; padding: 24px 16px; background: #12182d; color: #f7f8ff; font-family: Arial, sans-serif; }
+      main { width: min(100%, 720px); margin: 0 auto; }
+      .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; }
+      .topbar a { color: #a9e4dc; font-weight: 700; }
+      h1 { margin: 0; font-size: clamp(2rem, 7vw, 3rem); }
+      .game { padding: clamp(18px, 5vw, 30px); border: 1px solid rgb(255 255 255 / 12%); border-radius: 20px; background: #1b2440; box-shadow: 0 18px 45px rgb(0 0 0 / 24%); }
+      .intro { margin: 0 0 20px; color: #c6cce0; line-height: 1.55; }
+      .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+      .stat { padding: 12px; border-radius: 12px; background: rgb(255 255 255 / 5%); text-align: center; }
+      .stat span { display: block; color: #b6bfd9; font-size: 0.85rem; }
+      .stat strong { display: block; margin-top: 5px; font-size: 1.55rem; }
+      #arena { display: grid; width: 100%; min-height: 310px; place-items: center; padding: 20px; border: 0; border-radius: 16px; background: #b64b5b; color: white; font: inherit; font-size: clamp(1.25rem, 5vw, 2rem); font-weight: 900; text-align: center; cursor: pointer; transition: background 120ms ease, transform 120ms ease; touch-action: manipulation; }
+      #arena:hover:not(:disabled) { transform: scale(1.01); }
+      #arena.waiting { background: #bd4d55; }
+      #arena.ready { background: #1fa779; }
+      #arena.too-soon { background: #bd4d55; }
+      #arena:disabled { cursor: default; opacity: 1; }
+      .controls { display: flex; justify-content: center; margin-top: 14px; }
+      #reset { min-height: 42px; padding: 8px 14px; border: 1px solid rgb(255 255 255 / 22%); border-radius: 10px; background: transparent; color: white; font: inherit; font-weight: 700; cursor: pointer; }
+      #reset:hover { background: rgb(255 255 255 / 8%); }
+      #status { min-height: 1.5em; margin: 14px 0 0; color: #c6cce0; text-align: center; }
+      button:focus-visible, a:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+      @media (max-width: 480px) { body { padding: 16px 10px; } #arena { min-height: 270px; } }
+      .site-logo { position: fixed; top: 12px; left: 12px; z-index: 1000; display: block; width: 52px; height: 52px; }
+      .site-logo img { display: block; width: 100%; height: 100%; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 16px rgb(0 0 0 / 28%); }
+      .topbar { padding-left: 60px; }
+    </style>
+  </head>
+  <body>
+    <a class="site-logo" href="../home.html" aria-label="Boredom-Busters home"><img src="../Website logo.png" alt="" /></a>
+    <main>
+      <header class="topbar"><h1>Reaction Test</h1><a href="../home.html">Home</a></header>
+      <section class="game" aria-label="Reaction time game">
+        <p class="intro">Click start, wait for the panel to turn green, then click as fast as you can. Click too early and you’ll have to start over!</p>
+        <div class="stats">
+          <div class="stat"><span>Last reaction</span><strong id="last">—</strong></div>
+          <div class="stat"><span>Best reaction</span><strong id="best">—</strong></div>
+        </div>
+        <button id="arena" type="button">Start test</button>
+        <div class="controls"><button id="reset" type="button">Reset best</button></div>
+        <p id="status" role="status" aria-live="polite">Ready when you are.</p>
+      </section>
+    </main>
+    <script>
+      const arena = document.querySelector("#arena");
+      const lastDisplay = document.querySelector("#last");
+      const bestDisplay = document.querySelector("#best");
+      const status = document.querySelector("#status");
+      let phase = "idle";
+      let timeoutId;
+      let readyAt = 0;
+      let best = null;
+
+      try {
+        const saved = Number(localStorage.getItem("reactionTestBest"));
+        if (Number.isFinite(saved) && saved > 0) best = saved;
+      } catch (error) {
+        status.textContent = "The best score cannot be saved in this browser.";
+      }
+      bestDisplay.textContent = best === null ? "—" : `${best} ms`;
+
+      function resetRound(message) {
+        window.clearTimeout(timeoutId);
+        phase = "idle";
+        arena.className = "";
+        arena.textContent = "Start again";
+        status.textContent = message;
+      }
+
+      arena.addEventListener("click", () => {
+        if (phase === "idle") {
+          phase = "waiting";
+          arena.className = "waiting";
+          arena.textContent = "Wait for green...";
+          status.textContent = "Stay ready. Don’t click until it turns green!";
+          timeoutId = window.setTimeout(() => {
+            if (phase !== "waiting") return;
+            phase = "ready";
+            readyAt = performance.now();
+            arena.className = "ready";
+            arena.textContent = "CLICK!";
+            status.textContent = "Now!";
+          }, 1200 + Math.random() * 2800);
+        } else if (phase === "waiting") {
+          resetRound("Too soon! Press start when you’re ready to try again.");
+          arena.className = "too-soon";
+          arena.textContent = "Too soon!";
+        } else if (phase === "ready") {
+          const reaction = Math.round(performance.now() - readyAt);
+          phase = "idle";
+          arena.className = "";
+          arena.textContent = "Play again";
+          lastDisplay.textContent = `${reaction} ms`;
+          if (best === null || reaction < best) {
+            best = reaction;
+            bestDisplay.textContent = `${best} ms`;
+            status.textContent = "New personal best! Great reflexes.";
+            try {
+              localStorage.setItem("reactionTestBest", String(best));
+            } catch (error) {
+              status.textContent = "New best! It could not be saved in this browser.";
+            }
+          } else {
+            status.textContent = reaction < 250 ? "Lightning fast!" : reaction < 400 ? "Nice reaction!" : "Good try! Can you beat your best?";
+          }
+        }
+      });
+
+      document.querySelector("#reset").addEventListener("click", () => {
+        best = null;
+        bestDisplay.textContent = "—";
+        try {
+          localStorage.removeItem("reactionTestBest");
+        } catch (error) {
+          status.textContent = "The saved best could not be removed from this browser.";
+        }
+        resetRound("Best score reset. Ready when you are.");
+      });
+    </script>
+  </body>
+</html>

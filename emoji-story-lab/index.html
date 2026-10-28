@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#241b25" />
+    <title>Emoji Story Lab — Boredom-Busters</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { min-height: 100vh; margin: 0; padding: 28px 16px; background: radial-gradient(ellipse at 85% 4%, #654358, transparent 40%), #241b25; color: #fff8f1; font-family: Georgia, "Times New Roman", serif; }
+      main { width: min(100%, 780px); margin: 0 auto; }
+      nav { margin-bottom: 38px; font-family: system-ui, sans-serif; }
+      a { color: #ffd2ad; font-weight: 750; }
+      .eyebrow { color: #ffc98f; font: 800 .78rem system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; }
+      h1 { margin: 10px 0; font-size: clamp(2.4rem, 9vw, 4.7rem); letter-spacing: -.055em; line-height: .98; }
+      .lead { max-width: 600px; color: #dacbc7; font: 1.05rem/1.65 system-ui, sans-serif; }
+      .card { margin-top: 28px; padding: clamp(20px, 5vw, 38px); border: 1px solid #ffffff20; border-radius: 25px; background: #332831; box-shadow: 0 22px 60px #0004; }
+      .spark { min-height: 112px; margin: 0; color: #ffe4c8; font-size: clamp(1.45rem, 5vw, 2.2rem); line-height: 1.4; }
+      label { display: block; margin: 25px 0 8px; color: #e2c9c4; font: 750 .9rem system-ui, sans-serif; }
+      textarea { display: block; width: 100%; min-height: 170px; resize: vertical; padding: 14px; border: 1px solid #ffffff24; border-radius: 14px; outline: none; background: #271f26; color: #fff8f1; font: 1rem/1.6 system-ui, sans-serif; }
+      textarea:focus { border-color: #ffbf8b; box-shadow: 0 0 0 3px #ffbf8b2b; }
+      .row { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 18px; font: .9rem system-ui, sans-serif; }
+      button { min-height: 46px; padding: 11px 17px; border: 0; border-radius: 12px; background: #ffbf8b; color: #321f20; font: 800 .95rem system-ui, sans-serif; cursor: pointer; }
+      button:hover { background: #ffd1a9; transform: translateY(-1px); }
+      button:focus-visible, a:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+      #count { color: #d3bdbc; }
+      @media (max-width: 520px) { body { padding: 20px 12px; } .row { align-items: flex-start; flex-direction: column; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <nav><a href="../home.html">← All mini apps</a></nav>
+      <p class="eyebrow">A tiny creative warm-up</p>
+      <h1>Emoji Story Lab <span aria-hidden="true">✍️</span></h1>
+      <p class="lead">Three random emojis, one unexpected story. Use the spark as a starting point, then make the tale your own.</p>
+      <section class="card" aria-label="Story prompt generator">
+        <p id="spark" class="spark" aria-live="polite"></p>
+        <label for="story">Your story</label>
+        <textarea id="story" placeholder="Once upon a time…"></textarea>
+        <div class="row"><button id="new-spark" type="button">Give me a new spark ↗</button><span id="count" aria-live="polite">0 words</span></div>
+      </section>
+    </main>
+    <script>
+      const emojiSets = [
+        ["🦊", "🚀", "🌙"], ["🐙", "🎩", "🏰"], ["🐸", "🎸", "🌋"],
+        ["🕵️", "🍰", "🧊"], ["🐉", "📮", "🌈"], ["🧑‍🚀", "🪴", "🗝️"],
+        ["🦉", "🎈", "⏳"], ["🐢", "🎻", "🌊"], ["👻", "🍉", "🚂"]
+      ];
+      let previous = -1;
+      const spark = document.querySelector("#spark");
+      const story = document.querySelector("#story");
+      const count = document.querySelector("#count");
+      function makeSpark() {
+        let next = Math.floor(Math.random() * emojiSets.length);
+        if (emojiSets.length > 1 && next === previous) next = (next + 1) % emojiSets.length;
+        previous = next;
+        spark.textContent = `Your story must include: ${emojiSets[next].join("  ")}`;
+      }
+      function countWords() {
+        const words = story.value.trim().match(/\S+/g);
+        count.textContent = `${words ? words.length : 0} ${words && words.length === 1 ? "word" : "words"}`;
+      }
+      document.querySelector("#new-spark").addEventListener("click", makeSpark);
+      story.addEventListener("input", countWords);
+      makeSpark();
+    </script>
+  </body>
+</html>

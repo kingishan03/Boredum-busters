@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#111327" />
+    <title>Study Planner</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { min-height: 100vh; margin: 0; padding: 28px 16px; background: #7b76b0; color: #24233a; font-family: Arial, sans-serif; }
+      main { width: min(100%, 760px); margin: 0 auto; }
+      .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; }
+      .topbar a { color: #24233a; font-weight: 700; }
+      h1 { margin: 0; font-size: clamp(2rem, 6vw, 3rem); }
+      .panel, .session { padding: 22px; border: 1px solid rgb(255 255 255 / 45%); border-radius: 16px; background: #6f9895; box-shadow: 0 12px 30px rgb(39 35 74 / 15%); }
+      .panel { margin-bottom: 20px; }
+      form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+      label { display: grid; gap: 6px; font-weight: 700; }
+      input, button { min-height: 44px; padding: 10px 12px; border: 1px solid #527674; border-radius: 8px; font: inherit; }
+      input { min-width: 0; background: white; }
+      button { background: #145c58; color: white; font-weight: 700; cursor: pointer; }
+      button:hover { background: #104a47; }
+      .wide { grid-column: 1 / -1; }
+      ul { display: grid; gap: 10px; padding: 0; list-style: none; }
+      .session { display: flex; align-items: center; gap: 12px; }
+      .session input { width: 20px; min-height: 20px; accent-color: #145c58; }
+      .session div { flex: 1; }
+      .session p { margin: 5px 0 0; }
+      .done strong { text-decoration: line-through; opacity: 0.7; }
+      .delete { min-height: 36px; padding: 6px 10px; background: #7e3434; }
+      #status { min-height: 1.4em; }
+      body {
+        background:
+          radial-gradient(ellipse at 12% 0%, rgb(167 139 250 / 18%), transparent 34rem),
+          #111327;
+        color: #f7f6ff;
+      }
+      .topbar a { color: #cbbaff; }
+      .panel, .session {
+        border-color: rgb(255 255 255 / 12%);
+        background: #1b1d35;
+        box-shadow: 0 16px 38px rgb(0 0 0 / 18%);
+      }
+      label { color: #e8e4f5; }
+      input { border-color: #494660; background: #111327; color: #f7f6ff; }
+      button {
+        border: 0;
+        background: linear-gradient(110deg, #bba8ff, #ff9acb);
+        color: #18152a;
+      }
+      button:hover { background: #e0d4ff; }
+      .session input { accent-color: #a78bfa; }
+      .delete { background: #442b42; color: #ffd2e6; }
+      .delete:hover { background: #63384f; }
+      #status { color: #a9efd8; }
+      button:focus-visible, input:focus-visible, a:focus-visible {
+        outline: 3px solid white;
+        outline-offset: 3px;
+      }
+      @media (max-width: 520px) { form { grid-template-columns: 1fr; } .wide { grid-column: auto; } .session { align-items: flex-start; } }
+      .site-logo { position: fixed; top: 12px; left: 12px; z-index: 1000; display: block; width: 52px; height: 52px; }
+      .site-logo img { display: block; width: 100%; height: 100%; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 16px rgb(0 0 0 / 28%); }
+      .topbar { padding-left: 60px; }
+    </style>
+  </head>
+  <body>
+    <a class="site-logo" href="../home.html" aria-label="Boredom-Busters home"><img src="../Website logo.png" alt="" /></a>
+    <main>
+      <header class="topbar"><h1>Study planner</h1><a href="../home.html">Home</a></header>
+      <section class="panel">
+        <h2>Plan a study session</h2>
+        <form id="study-form">
+          <label>Subject<input name="subject" required maxlength="60" placeholder="e.g. Biology" /></label>
+          <label>Study date<input name="date" type="date" required /></label>
+          <label>Time<input name="time" type="time" required /></label>
+          <label>Duration (minutes)<input name="minutes" type="number" min="5" max="720" step="5" value="30" required /></label>
+          <button class="wide" type="submit">Add to planner</button>
+        </form>
+        <p id="status" role="status" aria-live="polite"></p>
+      </section>
+      <section><h2>Your sessions</h2><ul id="sessions"></ul></section>
+    </main>
+    <script>
+      const storageKey = "boredomBusters.studySessions";
+      const form = document.querySelector("#study-form");
+      const list = document.querySelector("#sessions");
+      const status = document.querySelector("#status");
+      function load() {
+        try {
+          const value = JSON.parse(localStorage.getItem(storageKey) || "[]");
+          return Array.isArray(value) ? value : [];
+        } catch (error) {
+          status.textContent = "Saved sessions could not be loaded.";
+          return [];
+        }
+      }
+      let sessions = load();
+      form.elements.date.value = new Date().toISOString().slice(0, 10);
+      function save(next) {
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(next));
+          sessions = next;
+          render();
+        } catch (error) {
+          status.textContent = "Your session could not be saved. Check your browser storage settings.";
+        }
+      }
+      function render() {
+        list.replaceChildren();
+        sessions.slice().sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`)).forEach((item) => {
+          const li = document.createElement("li");
+          li.className = `session${item.done ? " done" : ""}`;
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.checked = item.done;
+          checkbox.setAttribute("aria-label", `Mark ${item.subject} session complete`);
+          checkbox.addEventListener("change", () => save(sessions.map((session) => session.id === item.id ? { ...session, done: checkbox.checked } : session)));
+          const details = document.createElement("div");
+          const title = document.createElement("strong");
+          title.textContent = item.subject;
+          const meta = document.createElement("p");
+          meta.textContent = `${item.date} at ${item.time} · ${item.minutes} min`;
+          details.append(title, meta);
+          const remove = document.createElement("button");
+          remove.className = "delete";
+          remove.type = "button";
+          remove.textContent = "Remove";
+          remove.setAttribute("aria-label", `Remove ${item.subject} session`);
+          remove.addEventListener("click", () => save(sessions.filter((session) => session.id !== item.id)));
+          li.append(checkbox, details, remove);
+          list.append(li);
+        });
+        if (!sessions.length) list.innerHTML = "<li>No sessions planned yet. Add one above.</li>";
+      }
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const data = new FormData(form);
+        save([...sessions, { id: crypto.randomUUID(), subject: data.get("subject").trim(), date: data.get("date"), time: data.get("time"), minutes: Number(data.get("minutes")), done: false }]);
+        status.textContent = "Study session added.";
+        form.elements.subject.value = "";
+      });
+      render();
+    </script>
+  </body>
+</html>

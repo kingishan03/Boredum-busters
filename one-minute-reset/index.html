@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#17222c" />
+    <title>One-Minute Reset — Boredom-Busters</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { display: grid; min-height: 100vh; place-items: center; margin: 0; padding: 24px 14px; background: radial-gradient(ellipse at 50% 8%, #27464b, transparent 47%), #17222c; color: #f1fffb; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+      main { width: min(100%, 620px); text-align: center; }
+      nav { margin-bottom: 20px; text-align: left; } a { color: #a9e5d7; font-weight: 750; }
+      .eyebrow { color: #a9e5d7; font-size: .78rem; font-weight: 850; letter-spacing: .15em; text-transform: uppercase; }
+      h1 { margin: 8px 0 10px; font-size: clamp(2.4rem, 9vw, 4rem); letter-spacing: -.06em; }
+      .lead { max-width: 480px; margin: 0 auto; color: #b9cbc9; line-height: 1.6; }
+      .panel { margin-top: 24px; padding: 30px 20px; border: 1px solid #ffffff20; border-radius: 28px; background: #1e3035; box-shadow: 0 25px 65px #0004; }
+      .orb-wrap { display: grid; min-height: 250px; place-items: center; }
+      .orb { display: grid; width: 150px; height: 150px; place-items: center; border: 1px solid #d5fff266; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #c7fff2, #61cfb6 45%, #338e89 100%); box-shadow: 0 0 50px #63d8c566, inset 0 0 26px #e6fff866; color: #133b3a; font-size: 1.1rem; font-weight: 850; transition: transform 4s ease-in-out, filter 1s ease; }
+      .orb.inhale { transform: scale(1.22); }
+      .orb.hold { transform: scale(1.22); filter: brightness(1.08); }
+      .orb.exhale { transform: scale(.82); }
+      #phase { margin: 4px 0; color: #d9fff6; font-size: 1.35rem; font-weight: 800; }
+      #timer { margin: 8px 0 20px; color: #a9e5d7; font-size: 1rem; font-variant-numeric: tabular-nums; }
+      .actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
+      button { min-height: 46px; padding: 11px 17px; border: 1px solid #ffffff27; border-radius: 12px; background: #2a4448; color: #effffb; font: inherit; font-weight: 800; cursor: pointer; }
+      button.primary { border-color: transparent; background: #a9e5d7; color: #173331; }
+      button:hover { filter: brightness(1.1); }
+      button:focus-visible, a:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+      .note { margin: 16px auto 0; color: #91a9a8; font-size: .82rem; line-height: 1.5; }
+      @media (prefers-reduced-motion: reduce) { .orb { transition: none; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <nav><a href="../home.html">← All mini apps</a></nav>
+      <p class="eyebrow">A gentle pause</p>
+      <h1>One-Minute Reset <span aria-hidden="true">🌿</span></h1>
+      <p class="lead">Follow the expanding circle for a calm minute. Breathe comfortably—there's no need to force or hold your breath.</p>
+      <section class="panel" aria-label="One-minute breathing timer">
+        <div class="orb-wrap"><div id="orb" class="orb" aria-hidden="true"></div></div>
+        <p id="phase" role="status" aria-live="polite">Ready when you are</p>
+        <p id="timer">1:00 remaining</p>
+        <div class="actions">
+          <button id="start" class="primary" type="button">Begin</button>
+          <button id="reset" type="button">Start over</button>
+        </div>
+      </section>
+      <p class="note">Pause or stop whenever you'd like. This is a simple wellness break, not medical advice.</p>
+    </main>
+    <script>
+      const phases = [
+        { label: "Breathe in", seconds: 4, className: "inhale" },
+        { label: "Pause gently", seconds: 2, className: "hold" },
+        { label: "Breathe out", seconds: 6, className: "exhale" }
+      ];
+      const orb = document.querySelector("#orb");
+      const phaseLabel = document.querySelector("#phase");
+      const timerLabel = document.querySelector("#timer");
+      const startButton = document.querySelector("#start");
+      let remaining = 60;
+      let phaseElapsed = 0;
+      let phaseIndex = 0;
+      let interval;
+      function showTime() {
+        const minutes = Math.floor(remaining / 60);
+        const seconds = String(remaining % 60).padStart(2, "0");
+        timerLabel.textContent = `${minutes}:${seconds} remaining`;
+      }
+      function showPhase() {
+        const phase = phases[phaseIndex];
+        phaseLabel.textContent = phase.label;
+        orb.className = `orb ${phase.className}`;
+      }
+      function stop() {
+        window.clearInterval(interval);
+        interval = undefined;
+      }
+      function finish() {
+        stop();
+        remaining = 0;
+        showTime();
+        phaseLabel.textContent = "Minute complete. Nice work.";
+        orb.className = "orb";
+        startButton.disabled = true;
+        startButton.textContent = "Complete";
+      }
+      startButton.addEventListener("click", () => {
+        if (interval) {
+          stop();
+          startButton.textContent = "Continue";
+          startButton.classList.add("primary");
+          phaseLabel.textContent = "Paused";
+          orb.className = "orb";
+          return;
+        }
+        if (remaining === 0) return;
+        startButton.textContent = "Pause";
+        startButton.classList.remove("primary");
+        if (phaseLabel.textContent === "Ready when you are" || phaseLabel.textContent === "Paused") showPhase();
+        interval = window.setInterval(() => {
+          remaining -= 1;
+          phaseElapsed += 1;
+          showTime();
+          if (remaining <= 0) {
+            finish();
+            return;
+          }
+          if (phaseElapsed >= phases[phaseIndex].seconds) {
+            phaseElapsed = 0;
+            phaseIndex = (phaseIndex + 1) % phases.length;
+            showPhase();
+          }
+        }, 1000);
+      });
+      document.querySelector("#reset").addEventListener("click", () => {
+        stop();
+        remaining = 60;
+        phaseElapsed = 0;
+        phaseIndex = 0;
+        showTime();
+        phaseLabel.textContent = "Ready when you are";
+        orb.className = "orb";
+        startButton.disabled = false;
+        startButton.textContent = "Begin";
+        startButton.classList.add("primary");
+      });
+      showTime();
+    </script>
+  </body>
+</html>

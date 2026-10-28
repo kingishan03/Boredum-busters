@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#111327" />
+    <title>Drawing Pad</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        padding: 32px 18px;
+        background: #7b76b0;
+        color: #24233a;
+        font-family: Arial, sans-serif;
+      }
+
+      main {
+        width: min(100%, 960px);
+        margin: 0 auto;
+      }
+
+      header {
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(2rem, 6vw, 3rem);
+      }
+
+      header p {
+        margin: 0;
+        color: #37344f;
+      }
+
+      .workspace {
+        padding: clamp(14px, 3vw, 24px);
+        border: 1px solid rgb(255 255 255 / 45%);
+        border-radius: 18px;
+        background: #6f9895;
+        box-shadow: 0 16px 36px rgb(39 35 74 / 20%);
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: end;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .control {
+        display: grid;
+        gap: 6px;
+        color: #173b39;
+        font-size: 0.9rem;
+        font-weight: 700;
+      }
+
+      .control input[type="color"] {
+        width: 52px;
+        height: 42px;
+        padding: 4px;
+        cursor: pointer;
+      }
+
+      .control input[type="range"] {
+        width: 130px;
+        accent-color: #145c58;
+        cursor: pointer;
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      button,
+      .control input {
+        min-height: 42px;
+        border: 1px solid #527674;
+        border-radius: 8px;
+      }
+
+      button {
+        padding: 9px 13px;
+        background: #f4f7f4;
+        color: #173b39;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button:hover:not(:disabled) {
+        background: #e0efeb;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+
+      button[aria-pressed="true"] {
+        border-color: #145c58;
+        background: #145c58;
+        color: white;
+      }
+
+      button:focus-visible,
+      input:focus-visible,
+      a:focus-visible {
+        outline: 3px solid #f4ce67;
+        outline-offset: 2px;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 8px;
+      }
+
+      #brush-size-value {
+        min-width: 2ch;
+        display: inline-block;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .canvas-wrap {
+        overflow: hidden;
+        border: 2px solid #527674;
+        border-radius: 10px;
+        background: white;
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: min(62vh, 600px);
+        min-height: 340px;
+        touch-action: none;
+        cursor: crosshair;
+      }
+
+      .canvas-help {
+        margin: 10px 0 0;
+        color: #214a47;
+        font-size: 0.9rem;
+        text-align: center;
+      }
+
+      .back-link {
+        display: block;
+        width: fit-content;
+        margin: 18px auto 0;
+        color: #cbbaff;
+        font-weight: 700;
+      }
+
+      body {
+        background:
+          radial-gradient(ellipse at 12% 0%, rgb(167 139 250 / 18%), transparent 34rem),
+          #111327;
+        color: #f7f6ff;
+      }
+      header p, .canvas-help { color: #c2bfd5; }
+      .workspace {
+        border-color: rgb(255 255 255 / 12%);
+        background: #1b1d35;
+        box-shadow: 0 20px 55px rgb(0 0 0 / 24%);
+      }
+      .control { color: #e8e4f5; }
+      .control input[type="range"] { accent-color: #bba8ff; }
+      button, .control input {
+        border-color: #494660;
+        background: #282641;
+        color: #f7f6ff;
+      }
+      button:hover:not(:disabled) { background: #373052; }
+      button[aria-pressed="true"] { border-color: #bba8ff; background: #7060a5; color: white; }
+      .canvas-wrap { border-color: #494660; }
+      a { color: #cbbaff; }
+      button:focus-visible, input:focus-visible, a:focus-visible {
+        outline: 3px solid white;
+        outline-offset: 3px;
+      }
+
+      @media (max-width: 560px) {
+        body {
+          padding: 22px 12px;
+        }
+
+        .toolbar {
+          align-items: stretch;
+        }
+
+        .button-group {
+          flex: 1 1 100%;
+        }
+
+        .button-group button {
+          flex: 1;
+        }
+
+        canvas {
+          height: 55vh;
+          min-height: 300px;
+        }
+      }
+      .site-logo { position: fixed; top: 12px; left: 12px; z-index: 1000; display: block; width: 52px; height: 52px; }
+      .site-logo img { display: block; width: 100%; height: 100%; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 16px rgb(0 0 0 / 28%); }
+      body { padding-top: 82px; }
+    </style>
+  </head>
+  <body>
+    <a class="site-logo" href="../home.html" aria-label="Boredom-Busters home"><img src="../Website logo.png" alt="" /></a>
+    <main>
+      <header>
+        <h1>Drawing Pad</h1>
+        <p>Make a picture with your mouse, finger, or stylus.</p>
+      </header>
+
+      <section class="workspace" aria-label="Drawing tools and canvas">
+        <div class="toolbar">
+          <label class="control" for="brush-color">
+            Color
+            <input id="brush-color" type="color" value="#173b39" />
+          </label>
+
+          <label class="control" for="brush-size">
+            Brush size <span><span id="brush-size-value">6</span> px</span>
+            <input id="brush-size" type="range" min="1" max="40" value="6" />
+          </label>
+
+          <div class="button-group" aria-label="Drawing actions">
+            <button id="eraser-button" type="button" aria-pressed="false">Eraser</button>
+            <button id="undo-button" type="button" disabled>Undo</button>
+            <button id="redo-button" type="button" disabled>Redo</button>
+            <button id="clear-button" type="button">Clear</button>
+            <button id="download-button" type="button">Download</button>
+          </div>
+        </div>
+
+        <div class="canvas-wrap">
+          <canvas id="drawing-canvas" aria-label="Drawing canvas"></canvas>
+        </div>
+        <p class="canvas-help">Pick a color and brush size, then draw on the white canvas.</p>
+      </section>
+
+      <a class="back-link" href="../home.html">Back to the home page</a>
+    </main>
+
+    <script>
+      const canvas = document.querySelector("#drawing-canvas");
+      const context = canvas.getContext("2d");
+      const colorInput = document.querySelector("#brush-color");
+      const sizeInput = document.querySelector("#brush-size");
+      const sizeValue = document.querySelector("#brush-size-value");
+      const eraserButton = document.querySelector("#eraser-button");
+      const undoButton = document.querySelector("#undo-button");
+      const redoButton = document.querySelector("#redo-button");
+      const clearButton = document.querySelector("#clear-button");
+      const downloadButton = document.querySelector("#download-button");
+
+      let drawing = false;
+      let erasing = false;
+      let undoStack = [];
+      let redoStack = [];
+      const historyLimit = 20;
+
+      function setCanvasSize() {
+        const previous = document.createElement("canvas");
+        previous.width = canvas.width;
+        previous.height = canvas.height;
+        if (previous.width && previous.height) {
+          previous.getContext("2d").drawImage(canvas, 0, 0);
+        }
+
+        const bounds = canvas.getBoundingClientRect();
+        const pixelRatio = window.devicePixelRatio || 1;
+        canvas.width = Math.round(bounds.width * pixelRatio);
+        canvas.height = Math.round(bounds.height * pixelRatio);
+        context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, bounds.width, bounds.height);
+
+        if (previous.width && previous.height) {
+          context.drawImage(previous, 0, 0, bounds.width, bounds.height);
+        }
+
+        undoStack = [];
+        redoStack = [];
+        updateHistoryButtons();
+      }
+
+      function updateHistoryButtons() {
+        undoButton.disabled = undoStack.length === 0;
+        redoButton.disabled = redoStack.length === 0;
+      }
+
+      function saveSnapshot(stack) {
+        if (stack.length === 0 || stack.length < historyLimit) {
+          stack.push(context.getImageData(0, 0, canvas.width, canvas.height));
+        } else {
+          stack.shift();
+          stack.push(context.getImageData(0, 0, canvas.width, canvas.height));
+        }
+      }
+
+      function restoreSnapshot(snapshot) {
+        context.putImageData(snapshot, 0, 0);
+        updateHistoryButtons();
+      }
+
+      function getPosition(event) {
+        const bounds = canvas.getBoundingClientRect();
+        return {
+          x: event.clientX - bounds.left,
+          y: event.clientY - bounds.top,
+        };
+      }
+
+      function startDrawing(event) {
+        if (event.button !== undefined && event.button !== 0) {
+          return;
+        }
+        event.preventDefault();
+        saveSnapshot(undoStack);
+        redoStack = [];
+        updateHistoryButtons();
+        drawing = true;
+        canvas.setPointerCapture(event.pointerId);
+
+        const position = getPosition(event);
+        context.beginPath();
+        context.moveTo(position.x, position.y);
+        context.lineCap = "round";
+        context.lineJoin = "round";
+        context.lineWidth = Number(sizeInput.value);
+        context.strokeStyle = erasing ? "#ffffff" : colorInput.value;
+        context.lineTo(position.x + 0.01, position.y + 0.01);
+        context.stroke();
+      }
+
+      function continueDrawing(event) {
+        if (!drawing) {
+          return;
+        }
+        const position = getPosition(event);
+        context.lineTo(position.x, position.y);
+        context.stroke();
+      }
+
+      function stopDrawing(event) {
+        if (!drawing) {
+          return;
+        }
+        drawing = false;
+        context.closePath();
+        if (canvas.hasPointerCapture(event.pointerId)) {
+          canvas.releasePointerCapture(event.pointerId);
+        }
+      }
+
+      sizeInput.addEventListener("input", () => {
+        sizeValue.textContent = sizeInput.value;
+      });
+
+      eraserButton.addEventListener("click", () => {
+        erasing = !erasing;
+        eraserButton.setAttribute("aria-pressed", String(erasing));
+        eraserButton.textContent = erasing ? "Eraser on" : "Eraser";
+      });
+
+      undoButton.addEventListener("click", () => {
+        if (undoStack.length === 0) {
+          return;
+        }
+        saveSnapshot(redoStack);
+        restoreSnapshot(undoStack.pop());
+      });
+
+      redoButton.addEventListener("click", () => {
+        if (redoStack.length === 0) {
+          return;
+        }
+        saveSnapshot(undoStack);
+        restoreSnapshot(redoStack.pop());
+      });
+
+      clearButton.addEventListener("click", () => {
+        saveSnapshot(undoStack);
+        redoStack = [];
+        const bounds = canvas.getBoundingClientRect();
+        context.clearRect(0, 0, bounds.width, bounds.height);
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, bounds.width, bounds.height);
+        updateHistoryButtons();
+      });
+
+      downloadButton.addEventListener("click", () => {
+        const link = document.createElement("a");
+        link.download = "my-drawing.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+
+      canvas.addEventListener("pointerdown", startDrawing);
+      canvas.addEventListener("pointermove", continueDrawing);
+      canvas.addEventListener("pointerup", stopDrawing);
+      canvas.addEventListener("pointercancel", stopDrawing);
+      window.addEventListener("resize", setCanvasSize);
+
+      setCanvasSize();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#40365c" />
+    <title>Number Guess</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { min-height: 100vh; margin: 0; padding: 24px 16px; background: #40365c; color: #fff; font-family: Arial, sans-serif; }
+      main { width: min(100%, 620px); margin: 0 auto; }
+      .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; }
+      .topbar a { color: #f2d6a8; font-weight: 700; }
+      h1 { margin: 0; font-size: clamp(2rem, 7vw, 3rem); }
+      .game { padding: clamp(20px, 6vw, 36px); border: 1px solid rgb(255 255 255 / 15%); border-radius: 20px; background: #564976; box-shadow: 0 18px 45px rgb(0 0 0 / 22%); }
+      .intro { margin: 0 0 24px; color: #e8def6; line-height: 1.55; }
+      .secret { margin: 0 0 20px; color: #f2d6a8; font-size: clamp(2.5rem, 12vw, 4rem); font-weight: 900; text-align: center; }
+      .stats { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; color: #e8def6; font-weight: 700; }
+      form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+      input, button { min-height: 48px; padding: 10px 14px; border-radius: 9px; font: inherit; }
+      input { min-width: 0; border: 2px solid #c7b5e3; background: #fff; color: #302541; }
+      button { border: 0; background: #f2d6a8; color: #302541; font-weight: 800; cursor: pointer; }
+      button:hover:not(:disabled) { background: #ffebc9; }
+      button:disabled { cursor: default; opacity: 0.6; }
+      #new-game { display: block; margin: 16px auto 0; padding: 9px 16px; background: transparent; color: white; border: 1px solid rgb(255 255 255 / 50%); }
+      #message { min-height: 1.5em; margin: 20px 0 0; font-size: 1.1rem; font-weight: 700; text-align: center; }
+      #history { min-height: 1.4em; margin: 10px 0 0; color: #e8def6; text-align: center; overflow-wrap: anywhere; }
+      button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+      @media (max-width: 430px) { body { padding: 16px 10px; } form { grid-template-columns: 1fr; } }
+      .site-logo { position: fixed; top: 12px; left: 12px; z-index: 1000; display: block; width: 52px; height: 52px; }
+      .site-logo img { display: block; width: 100%; height: 100%; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 16px rgb(0 0 0 / 28%); }
+      .topbar { padding-left: 60px; }
+    </style>
+  </head>
+  <body>
+    <a class="site-logo" href="../home.html" aria-label="Boredom-Busters home"><img src="../Website logo.png" alt="" /></a>
+    <main>
+      <header class="topbar"><h1>Number Guess</h1><a href="../home.html">Home</a></header>
+      <section class="game" aria-label="Number guessing game">
+        <p class="intro">I picked a number from 1 to 100. Can you guess it in seven tries? I’ll tell you if your guess is too high or too low.</p>
+        <p class="secret" aria-hidden="true">❔</p>
+        <div class="stats">
+          <span>Guesses left: <strong id="remaining">7</strong></span>
+          <span>Wins: <strong id="wins">0</strong></span>
+        </div>
+        <form id="guess-form">
+          <input id="guess" type="number" min="1" max="100" step="1" inputmode="numeric" placeholder="Enter 1–100" aria-label="Guess a number from 1 to 100" required />
+          <button id="guess-button" type="submit">Guess</button>
+        </form>
+        <p id="message" role="status" aria-live="polite">Make your first guess!</p>
+        <p id="history">Previous guesses: none</p>
+        <button id="new-game" type="button">New number</button>
+      </section>
+    </main>
+    <script>
+      const maxGuesses = 7;
+      const input = document.querySelector("#guess");
+      const form = document.querySelector("#guess-form");
+      const remainingDisplay = document.querySelector("#remaining");
+      const winsDisplay = document.querySelector("#wins");
+      const message = document.querySelector("#message");
+      const history = document.querySelector("#history");
+      const guessButton = document.querySelector("#guess-button");
+      let secret = randomNumber();
+      let remaining = maxGuesses;
+      let wins = 0;
+      let previousGuesses = [];
+      let roundOver = false;
+
+      function randomNumber() {
+        return Math.floor(Math.random() * 100) + 1;
+      }
+
+      function updateRoundEnd(text) {
+        roundOver = true;
+        message.textContent = text;
+        guessButton.disabled = true;
+        input.disabled = true;
+      }
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (roundOver) return;
+
+        const guess = Number(input.value);
+        if (!Number.isInteger(guess) || guess < 1 || guess > 100) {
+          message.textContent = "Enter a whole number from 1 to 100.";
+          input.focus();
+          return;
+        }
+        if (previousGuesses.includes(guess)) {
+          message.textContent = "You already tried that number. Pick a different one!";
+          input.select();
+          return;
+        }
+
+        previousGuesses.push(guess);
+        remaining -= 1;
+        remainingDisplay.textContent = remaining;
+        history.textContent = `Previous guesses: ${previousGuesses.join(", ")}`;
+
+        if (guess === secret) {
+          wins += 1;
+          winsDisplay.textContent = wins;
+          updateRoundEnd(`You got it! The number was ${secret}. 🎉`);
+        } else if (remaining === 0) {
+          updateRoundEnd(`Out of guesses! The number was ${secret}.`);
+        } else {
+          message.textContent = guess < secret ? "Too low! Try a higher number." : "Too high! Try a lower number.";
+        }
+
+        input.value = "";
+        if (!roundOver) input.focus();
+      });
+
+      document.querySelector("#new-game").addEventListener("click", () => {
+        secret = randomNumber();
+        remaining = maxGuesses;
+        previousGuesses = [];
+        roundOver = false;
+        remainingDisplay.textContent = maxGuesses;
+        history.textContent = "Previous guesses: none";
+        message.textContent = "New number picked. Make your first guess!";
+        guessButton.disabled = false;
+        input.disabled = false;
+        input.value = "";
+        input.focus();
+      });
+    </script>
+  </body>
+</html>

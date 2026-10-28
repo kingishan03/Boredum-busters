@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#20134a" />
+    <title>Click Frenzy</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        min-height: 100vh;
+        margin: 0;
+        padding: 24px 16px;
+        background:
+          radial-gradient(ellipse at 18% 8%, rgb(255 98 166 / 23%), transparent 35%),
+          radial-gradient(ellipse at 90% 85%, rgb(70 228 221 / 17%), transparent 38%),
+          #20134a;
+        color: #fff;
+        font-family: Arial, sans-serif;
+      }
+      main { width: min(100%, 760px); margin: 0 auto; }
+      .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; }
+      .topbar a { color: #d5ccff; font-weight: 700; }
+      h1 { margin: 0; font-size: clamp(2rem, 7vw, 3.5rem); letter-spacing: -0.04em; }
+      .card {
+        padding: clamp(18px, 5vw, 30px);
+        border: 1px solid rgb(255 255 255 / 16%);
+        border-radius: 22px;
+        background: rgb(38 27 79 / 88%);
+        box-shadow: 0 20px 50px rgb(0 0 0 / 24%);
+      }
+      .intro { margin: 8px 0 22px; color: #d5ccff; line-height: 1.5; }
+      .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+      .stat { padding: 12px; border: 1px solid rgb(255 255 255 / 12%); border-radius: 12px; background: rgb(255 255 255 / 6%); text-align: center; }
+      .stat span { display: block; color: #c9c1e7; font-size: 0.85rem; }
+      .stat strong { display: block; margin-top: 4px; font-size: clamp(1.4rem, 5vw, 2rem); font-variant-numeric: tabular-nums; }
+      .arena {
+        position: relative;
+        min-height: 340px;
+        overflow: hidden;
+        border: 2px solid rgb(255 255 255 / 18%);
+        border-radius: 16px;
+        background:
+          radial-gradient(circle at 20% 30%, rgb(255 255 255 / 5%) 0 2px, transparent 3px),
+          radial-gradient(circle at 76% 64%, rgb(255 255 255 / 5%) 0 2px, transparent 3px),
+          #171039;
+        background-size: 38px 38px, 53px 53px, auto;
+        touch-action: manipulation;
+      }
+      .target {
+        position: absolute;
+        display: grid;
+        width: 64px;
+        height: 64px;
+        place-items: center;
+        border: 0;
+        border-radius: 50%;
+        background: linear-gradient(145deg, #ff93dc, #ff4d83 55%, #ff7b48);
+        box-shadow: 0 0 0 7px rgb(255 94 153 / 16%), 0 0 28px rgb(255 87 155 / 62%);
+        color: white;
+        font-size: 1.7rem;
+        cursor: pointer;
+        transform: scale(1);
+        transition: left 100ms ease, top 100ms ease, transform 100ms ease;
+        animation: pulse 700ms ease-in-out infinite alternate;
+      }
+      .target:hover { transform: scale(1.09); }
+      .target:active { transform: scale(0.88); }
+      .target[hidden] { display: none; }
+      .arena-message {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 22px;
+        color: #d5ccff;
+        font-size: clamp(1rem, 4vw, 1.3rem);
+        font-weight: 700;
+        text-align: center;
+      }
+      .arena-message[hidden] { display: none; }
+      .controls { display: flex; justify-content: center; margin-top: 18px; }
+      button { font: inherit; }
+      #start {
+        min-height: 50px;
+        padding: 12px 26px;
+        border: 0;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #9b6bff, #ff5b9f);
+        box-shadow: 0 8px 24px rgb(192 93 255 / 28%);
+        color: white;
+        font-size: 1.05rem;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      #start:hover { filter: brightness(1.1); }
+      button:focus-visible, a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
+      #status { min-height: 1.4em; margin: 14px 0 0; color: #ded7fa; text-align: center; }
+      @keyframes pulse { to { box-shadow: 0 0 0 12px rgb(255 94 153 / 7%), 0 0 38px rgb(255 87 155 / 78%); } }
+      @media (max-width: 480px) {
+        body { padding: 16px 10px; }
+        .stats { gap: 6px; }
+        .stat { padding: 10px 5px; }
+        .arena { min-height: 300px; }
+        .target { width: 58px; height: 58px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+      }
+      .site-logo { position: fixed; top: 12px; left: 12px; z-index: 1000; display: block; width: 52px; height: 52px; }
+      .site-logo img { display: block; width: 100%; height: 100%; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 16px rgb(0 0 0 / 28%); }
+      .topbar { padding-left: 60px; }
+    </style>
+  </head>
+  <body>
+    <a class="site-logo" href="../home.html" aria-label="Boredom-Busters home"><img src="../Website logo.png" alt="" /></a>
+    <main>
+      <header class="topbar">
+        <h1>Click Frenzy</h1>
+        <a href="../home.html">Home</a>
+      </header>
+      <section class="card" aria-label="Click Frenzy game">
+        <p class="intro">Thirty seconds. One glowing target. Tap it as fast as you can and see if you can beat your best!</p>
+        <div class="stats" aria-label="Game stats">
+          <div class="stat"><span>Score</span><strong id="score">0</strong></div>
+          <div class="stat"><span>Time</span><strong><span id="time" style="display:inline;color:inherit;font-size:inherit">30</span>s</strong></div>
+          <div class="stat"><span>Personal best</span><strong id="best">0</strong></div>
+        </div>
+        <div class="arena" id="arena" aria-label="Game area">
+          <p class="arena-message" id="message">Press Start and tap the target!</p>
+          <button class="target" id="target" type="button" aria-label="Tap the glowing target" hidden>✦</button>
+        </div>
+        <div class="controls"><button id="start" type="button">Start game</button></div>
+        <p id="status" role="status" aria-live="polite"></p>
+      </section>
+    </main>
+    <script>
+      const roundLength = 30;
+      const arena = document.querySelector("#arena");
+      const target = document.querySelector("#target");
+      const message = document.querySelector("#message");
+      const startButton = document.querySelector("#start");
+      const scoreDisplay = document.querySelector("#score");
+      const timeDisplay = document.querySelector("#time");
+      const bestDisplay = document.querySelector("#best");
+      const status = document.querySelector("#status");
+      let score = 0;
+      let secondsLeft = roundLength;
+      let timerId;
+      let isPlaying = false;
+      let best = 0;
+
+      try {
+        best = Number(localStorage.getItem("clickFrenzyBest")) || 0;
+      } catch (error) {
+        status.textContent = "Personal best cannot be saved in this browser session.";
+      }
+      bestDisplay.textContent = best;
+
+      function moveTarget() {
+        const maxX = Math.max(0, arena.clientWidth - target.offsetWidth);
+        const maxY = Math.max(0, arena.clientHeight - target.offsetHeight);
+        const x = Math.floor(Math.random() * (maxX + 1));
+        const y = Math.floor(Math.random() * (maxY + 1));
+        target.style.left = `${x}px`;
+        target.style.top = `${y}px`;
+      }
+
+      function finishGame() {
+        isPlaying = false;
+        window.clearInterval(timerId);
+        target.hidden = true;
+        message.textContent = `Time! You scored ${score}. ${score > best ? "New personal best!" : "Ready for another round?"}`;
+        message.hidden = false;
+        startButton.textContent = "Play again";
+        if (score > best) {
+          best = score;
+          bestDisplay.textContent = best;
+          try {
+            localStorage.setItem("clickFrenzyBest", String(best));
+          } catch (error) {
+            status.textContent = "New best achieved, but it could not be saved in this browser.";
+          }
+        }
+        startButton.focus();
+      }
+
+      function startGame() {
+        window.clearInterval(timerId);
+        score = 0;
+        secondsLeft = roundLength;
+        isPlaying = true;
+        scoreDisplay.textContent = score;
+        timeDisplay.textContent = secondsLeft;
+        status.textContent = "Go! Tap the target!";
+        message.hidden = true;
+        target.hidden = false;
+        startButton.textContent = "Restart game";
+        moveTarget();
+        timerId = window.setInterval(() => {
+          secondsLeft -= 1;
+          timeDisplay.textContent = secondsLeft;
+          if (secondsLeft <= 0) finishGame();
+        }, 1000);
+      }
+
+      target.addEventListener("click", () => {
+        if (!isPlaying) return;
+        score += 1;
+        scoreDisplay.textContent = score;
+        moveTarget();
+      });
+
+      startButton.addEventListener("click", startGame);
+      window.addEventListener("resize", () => {
+        if (isPlaying) moveTarget();
+      });
+    </script>
+  </body>
+</html>

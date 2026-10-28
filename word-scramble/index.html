@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#292044" />
+    <title>Word Scramble</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { min-height: 100vh; margin: 0; padding: 24px 16px; background: #292044; color: #fff; font-family: Arial, sans-serif; }
+      main { width: min(100%, 640px); margin: 0 auto; }
+      .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; }
+      .topbar a { color: #c9bcff; font-weight: 700; }
+      h1 { margin: 0; font-size: clamp(2rem, 7vw, 3rem); }
+      .game { padding: clamp(20px, 6vw, 34px); border: 1px solid rgb(255 255 255 / 15%); border-radius: 20px; background: #372b58; box-shadow: 0 18px 45px rgb(0 0 0 / 22%); }
+      .intro { margin: 0 0 22px; color: #d7ceef; line-height: 1.5; }
+      .stats { display: flex; justify-content: space-between; gap: 10px; color: #e5dcff; font-weight: 700; }
+      .scrambled { margin: 26px 0; padding: 22px 10px; border-radius: 14px; background: #241a41; color: #ffd58a; font-size: clamp(2rem, 10vw, 3.5rem); font-weight: 900; letter-spacing: 0.22em; text-align: center; }
+      form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+      input, button { min-height: 48px; padding: 10px 14px; border-radius: 9px; font: inherit; }
+      input { min-width: 0; border: 2px solid #9a8ac7; background: white; color: #292044; }
+      button { border: 0; background: #e4d8ff; color: #292044; font-weight: 800; cursor: pointer; }
+      button:hover:not(:disabled) { background: white; }
+      button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+      .actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+      .actions button { min-height: 42px; padding: 8px 14px; }
+      #hint { color: #e1d8f6; text-align: center; }
+      #status { min-height: 1.5em; margin: 16px 0 0; color: #e2d9fa; font-weight: 700; text-align: center; }
+      @media (max-width: 430px) { body { padding: 16px 10px; } form { grid-template-columns: 1fr; } }
+      .site-logo { position: fixed; top: 12px; left: 12px; z-index: 1000; display: block; width: 52px; height: 52px; }
+      .site-logo img { display: block; width: 100%; height: 100%; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 16px rgb(0 0 0 / 28%); }
+      .topbar { padding-left: 60px; }
+    </style>
+  </head>
+  <body>
+    <a class="site-logo" href="../home.html" aria-label="Boredom-Busters home"><img src="../Website logo.png" alt="" /></a>
+    <main>
+      <header class="topbar"><h1>Word Scramble</h1><a href="../home.html">Home</a></header>
+      <section class="game" aria-label="Word scramble game">
+        <p class="intro">Rearrange the letters to find the hidden word. Solve as many as you can!</p>
+        <div class="stats"><span>Score: <span id="score">0</span></span><span>Streak: <span id="streak">0</span></span></div>
+        <div id="scrambled" class="scrambled" aria-label="Scrambled word"></div>
+        <form id="answer-form">
+          <input id="answer" name="answer" type="text" maxlength="24" autocomplete="off" autocapitalize="none" placeholder="Type your answer" aria-label="Your answer" required />
+          <button type="submit">Check word</button>
+        </form>
+        <div class="actions">
+          <button id="hint-button" type="button">Show hint</button>
+          <button id="skip-button" type="button">Skip word</button>
+        </div>
+        <p id="hint" aria-live="polite"></p>
+        <p id="status" role="status" aria-live="polite">Unscramble the word!</p>
+      </section>
+    </main>
+    <script>
+      const words = [
+        { word: "planet", hint: "A world that orbits a star." },
+        { word: "guitar", hint: "An instrument with strings." },
+        { word: "puzzle", hint: "A game that makes you think." },
+        { word: "castle", hint: "A grand home with towers." },
+        { word: "rocket", hint: "A vehicle that can fly to space." },
+        { word: "jungle", hint: "A forest full of tropical life." },
+        { word: "cookie", hint: "A sweet baked treat." },
+        { word: "wizard", hint: "A magical person with a wand." },
+        { word: "flower", hint: "A colorful bloom on a plant." },
+        { word: "island", hint: "Land surrounded by water." },
+        { word: "comet", hint: "An icy object with a glowing tail." },
+        { word: "dragon", hint: "A mythical creature that breathes fire." }
+      ];
+      const scrambledDisplay = document.querySelector("#scrambled");
+      const answerInput = document.querySelector("#answer");
+      const hintDisplay = document.querySelector("#hint");
+      const status = document.querySelector("#status");
+      const scoreDisplay = document.querySelector("#score");
+      const streakDisplay = document.querySelector("#streak");
+      let wordPool = [];
+      let currentWord = null;
+      let score = 0;
+      let streak = 0;
+
+      function nextWord() {
+        if (!wordPool.length) wordPool = [...words];
+        const index = Math.floor(Math.random() * wordPool.length);
+        currentWord = wordPool.splice(index, 1)[0];
+        const letters = currentWord.word.split("");
+        for (let i = letters.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [letters[i], letters[j]] = [letters[j], letters[i]];
+        }
+        let scrambled = letters.join("");
+        if (scrambled === currentWord.word) {
+          const rotation = 1 + Math.floor(Math.random() * (letters.length - 1));
+          scrambled = currentWord.word.slice(rotation) + currentWord.word.slice(0, rotation);
+        }
+        scrambledDisplay.textContent = scrambled.toUpperCase();
+        answerInput.value = "";
+        hintDisplay.textContent = "";
+        status.textContent = "Unscramble the word!";
+        answerInput.focus();
+      }
+
+      document.querySelector("#answer-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const answer = answerInput.value.trim().toLowerCase();
+        if (!answer) return;
+        if (answer === currentWord.word) {
+          const solvedWord = currentWord.word;
+          score += 1;
+          streak += 1;
+          scoreDisplay.textContent = score;
+          streakDisplay.textContent = streak;
+          nextWord();
+          status.textContent = `Correct! The word was ${solvedWord.toUpperCase()}.`;
+          return;
+        }
+        streak = 0;
+        streakDisplay.textContent = streak;
+        status.textContent = "Not quite. Give it another try!";
+        answerInput.select();
+      });
+
+      document.querySelector("#hint-button").addEventListener("click", () => {
+        hintDisplay.textContent = `Hint: ${currentWord.hint}`;
+      });
+
+      document.querySelector("#skip-button").addEventListener("click", () => {
+        streak = 0;
+        streakDisplay.textContent = streak;
+        status.textContent = `The word was ${currentWord.word.toUpperCase()}.`;
+        nextWord();
+      });
+
+      nextWord();
+    </script>
+  </body>
+</html>
