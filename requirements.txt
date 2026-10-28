@@ -1,0 +1,3 @@
+# This project is a static HTML/CSS/JavaScript website.
+# The optional daily app generator uses only Python's standard library.
+# No third-party Python packages are required.
